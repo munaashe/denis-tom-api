@@ -1,57 +1,67 @@
-const API_BASE_URL = process.env.TOM_API_BASE_URL;
-const TOM_API_KEY = process.env.TOM_API_KEY || '';
+const BASE_URL = process.env.TOM_API_BASE_URL;
+const TOM_API_KEY = process.env.TOM_API_KEY as string;
 
-interface Model {
-    id: string;
-    name: string;
-    inputVariables: Array<{ name: string; type: string }>;
+
+
+export async function fetchModelById(modelId: string) {
+  const response = await fetch(`${BASE_URL}/models/${modelId}`, {
+    headers: {
+      'Authorization': `Bearer ${TOM_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch model metadata');
+  }
+
+  return response.json();
 }
+export async function fetchModels() {
+    const response = await fetch(`${BASE_URL}/models/`, {
+      headers: {
+        'Authorization': `Bearer ${TOM_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+    });
+  
+    if (!response.ok) {
+      throw new Error('Failed to fetch model metadata');
+    }
+  
+    return response.json();
+  }
 
-interface DecisionResponse {
-    decision: string;
-    details: Record<string, any>;
-}
-
-// Helper function to make API requests
-async function apiRequest(endpoint: string, options: RequestInit = {}): Promise<any> {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        ...options,
+export async function fetchDecision(modelId: string, inputData: any) {
+    const response = await fetch(`${BASE_URL}/decision/${modelId}`, {
+        method: 'POST',
         headers: {
+            Authorization: `Bearer ${TOM_API_KEY}`,
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${TOM_API_KEY}`,
-            ...options.headers,
         },
+        body: JSON.stringify({ input: inputData }),
     });
 
     if (!response.ok) {
-        throw new Error(`Failed to fetch from ${endpoint}: ${response.statusText}`);
+        throw new Error('Failed to fetch decision');
     }
 
     return response.json();
 }
 
-// Fetch all models
-export async function fetchModels(): Promise<Model[]> {
-    return await apiRequest('/models');
-}
-
-// Fetch a specific model by ID
-export async function fetchModelById(modelId: string): Promise<Model> {
-    return await apiRequest(`/models/${modelId}`);
-}
-
-// Query a decision based on model ID and input data
-export async function fetchDecision(modelId: string, inputData: Record<string, any>): Promise<DecisionResponse> {
-    return await apiRequest(`/decision/${modelId}`, {
+export async function fetchBatchDecisions(modelId: string, inputBatch: any[]) {
+    const response = await fetch(`${BASE_URL}/batch/decision/${modelId}`, {
         method: 'POST',
-        body: JSON.stringify(inputData),
+        headers: {
+            Authorization: `Bearer ${TOM_API_KEY}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ inputs: inputBatch }),
     });
-}
 
-// Batch functionality (optional, adjust based on API specs)
-export async function fetchBatchDecisions(modelId: string, inputBatch: Array<Record<string, any>>): Promise<DecisionResponse[]> {
-    return await apiRequest(`/batch/${modelId}`, {
-        method: 'POST',
-        body: JSON.stringify(inputBatch),
-    });
+    if (!response.ok) {
+        throw new Error('Failed to fetch batch decisions');
+    }
+
+    return response.json();
 }

@@ -1,14 +1,11 @@
 import { NextResponse } from 'next/server';
-import { fetchModels, fetchModelById } from '@/services/tomApi';
+import { fetchModels} from '@/services/tomApi';
 
-export async function GET(req: Request) {
-    const { searchParams } = new URL(req.url);
-    const modelId = searchParams.get('modelId');
-
+export async function GET() {
     try {
-        const data = modelId ? await fetchModelById(modelId) : await fetchModels();
-        return NextResponse.json(data);
+        const models = await fetchModels();
+        return NextResponse.json(models);
     } catch (error) {
-        return NextResponse.json({ error: 'Failed to fetch models' }, { status: 500 });
+        return NextResponse.json({ error: 'Failed to fetch model metadata' }, { status: 500 });
     }
 }
