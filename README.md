@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
-## Getting Started
+# Project Setup and Running Instructions
 
-First, run the development server:
+## Introduction
+
+This project is a Next.js application integrated with MongoDB for storing decisions and using the TOM API for decision fetching. The live environment is deployed on Vercel.
+
+## Setup Instructions
+
+### 1. Clone the Repository
+
+First, clone the project repository from Git:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/munaashe/denis-tom-api.git
+cd denis-tom-api
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Install Dependencies
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Install the required dependencies using Yarn:
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+```bash
+yarn install
+```
 
-## Learn More
+### 3. Set Up Environment Variables
 
-To learn more about Next.js, take a look at the following resources:
+Create a `.env.local` file in the root directory of the project. Copy the contents from `.env.example` to `.env.local` and replace the placeholders with the actual values provided via confidential email.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Example `.env.local`:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+```env
+MONGODB_URI=
+TOM_API_KEY=
+TOM_API_BASE_URL=
+TOM_API_MODEL_ID=
+```
 
-## Deploy on Vercel
+### 4. Run the Development Server
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Start the development server:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+```bash
+yarn dev
+```
+
+Navigate to `http://localhost:3000` in your browser to view the application.
+
+## Live Environment
+
+The project is live and deployed on Vercel. You can access it at [https://denis-tom-api.vercel.app/](https://denis-tom-api.vercel.app/).
+
+## Security Measures
+
+1. **Environment Variables**: Sensitive information such as database URIs and API keys are stored in environment variables and not hard-coded in the source code.
+
+2. **Data Validation**: The application performs data validation on incoming requests to ensure that only valid data is processed and stored.
+
+3. **Error Handling**: Proper error handling is implemented to avoid leaking sensitive information and to provide meaningful error messages.
+
+4. **MongoDB Security**: The MongoDB connection is secured using connection strings with appropriate credentials and access controls.
+
+5. **Authentication and Authorization**: API requests are authenticated using tokens to ensure that only authorized users can access certain endpoints.
+
+6. **Vercel Security**: The Vercel deployment platform provides built-in security features such as HTTPS, automatic SSL certificates, and environment variable management.
+
+
+## Additions
+Batch Operations - I failed to find where exactly I can use the batch operations on the app
