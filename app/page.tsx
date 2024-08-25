@@ -1,11 +1,18 @@
-'use client';
+'use client'
+
+import { DecisionData, ModelData } from '@/utils/Types';
 import { useState, useEffect } from 'react';
+import ModelSelectOption from '@/components/ModelSelectOption';
+import DecisionModal from '@/components/DecisionModal';
+import AttributeInput from '@/components/AttributeInput';
 
 function HomePage() {
-  const [model, setModel] = useState<any>(null);
+  const [model, setSelectedModel] = useState<ModelData | null>(null);
   const [inputData, setInputData] = useState<any>({});
-  const [decision, setDecision] = useState<any>(null);
-  const [models, setModels] = useState<any[]>([]); // Ensure models is an array
+  const [decision, setDecision] = useState<DecisionData | null>(null);
+  const [models, setModels] = useState<ModelData[]>([]);
+  const [loading, setLoading] = useState<boolean>(false)
+  const [isSaveLoading, setIsSaveLoading] = useState<boolean>(false)
 
   useEffect(() => {
     async function loadModels() {
@@ -14,7 +21,7 @@ function HomePage() {
         const data = await response.json();
 
         if (Array.isArray(data.data)) {
-          setModels(data.data); // Ensure that models is an array
+          setModels(data.data);
         } else {
           console.error('Unexpected data format:', data);
         }
@@ -25,21 +32,6 @@ function HomePage() {
     loadModels();
   }, []);
 
-  console.log(models);
-
-  const handleModelChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const modelId = e.target.value;
-    if (modelId) {
-      try {
-        const response = await fetch(`/api/models/${modelId}`);
-        const data = await response.json();
-        setModel(data.data); // Accessing data as required
-      } catch (error) {
-        console.error('Failed to load model details:', error);
-      }
-    }
-  };
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputData({ ...inputData, [e.target.name]: e.target.value });
   };
@@ -47,30 +39,83 @@ function HomePage() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (model?.id) {
+      setLoading(true);
       try {
-        const response = await fetch(`/api/decision/${model.id}`, {
+        const formattedInputData = {
+          data: {
+            type: "scenario",
+            attributes: {
+              input: inputData
+            }
+          }
+        };
+
+        const response = await fetch('/api/decision', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ inputData }),
+          body: JSON.stringify({ modelId: model.id, inputData: formattedInputData }),
         });
+
         const data = await response.json();
         setDecision(data);
       } catch (error) {
         console.error('Failed to fetch decision:', error);
+      } finally {
+        setLoading(false);
       }
+    }
+  };
+
+  const handleModelChange = (selectedModelId: string) => {
+    if (selectedModelId === '') {
+      setSelectedModel(null);
+    } else {
+      const selectedModel = models.find((model) => model.id === selectedModelId);
+      if (selectedModel) {
+        setSelectedModel(selectedModel);
+      }
+    }
+  };
+
+  const handleSaveToDatabase = async () => {
+    setIsSaveLoading(true);
+    try {
+      const response = await fetch('/api/save-decision', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ decision }),
+      });
+
+      if (response.ok) {
+        console.log('Decision saved successfully');
+      } else {
+        console.error('Failed to save decision');
+      }
+    } catch (error) {
+      console.error('Failed to save decision:', error);
+    } finally {
+      setDecision(null)
+      setIsSaveLoading(false);
     }
   };
 
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Select a Model and Input Data</h1>
-      <select onChange={handleModelChange} className="mb-4 p-2 border">
-        <option>Select a model...</option>
+      <select
+        className="mb-4 p-2 border"
+        onChange={(e) => handleModelChange(e.target.value)}
+      >
+        <option value="">Select a model...</option>
         {models.length > 0 ? (
           models.map((model) => (
-            <option key={model.id} value={model.id}>
-              {model.attributes.name}
-            </option>
+            <ModelSelectOption
+              key={model.id}
+              modelId={model.id}
+              modelName={model.attributes.name}
+              selectedModelId={model?.id || ''}
+              onSelectModel={() => handleModelChange(model.id)}
+            />
           ))
         ) : (
           <option>No models available</option>
@@ -80,30 +125,34 @@ function HomePage() {
       {model && (
         <form onSubmit={handleSubmit} className="mb-4">
           {model.attributes.metadata.attributes.map((variable: any) => (
-            <div key={variable.name} className="mb-2">
-              <label className="block">{variable.question}</label>
-              <input
-                name={variable.name}
-                type={variable.type === 'Continuous' ? 'number' : 'text'}
-                onChange={handleChange}
-                className="p-2 border rounded w-full"
-              />
-            </div>
+            <AttributeInput
+              key={variable.name}
+              attribute={variable}
+              onChange={handleChange}
+            />
           ))}
-          <button
-            type="submit"
-            className="bg-blue-500 text-white p-2 rounded hover:bg-blue-700"
-          >
-            Submit
-          </button>
+          <div className='mt-4'>
+            {loading ? <>
+              <div className="flex justify-start items-center">
+                <div className="spinner border-4 border-t-4 border-blue-500 border-opacity-25 rounded-full w-8 h-8 animate-spin"></div>
+              </div></> :
+              <button
+                type="submit"
+                className="bg-blue-500 text-white p-2 rounded hover:bg-blue-700"
+              >
+                Submit
+              </button>}
+          </div>
         </form>
       )}
 
       {decision && (
-        <div className="mt-4">
-          <h2 className="text-xl font-bold">Decision</h2>
-          <p>{decision.decision}</p>
-        </div>
+        <DecisionModal
+          decision={decision}
+          closeModal={() => setDecision(null)}
+          onSave={handleSaveToDatabase}
+          loading={isSaveLoading}
+        />
       )}
     </div>
   );
